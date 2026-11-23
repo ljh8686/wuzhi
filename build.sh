@@ -40,11 +40,12 @@ BC="C:/Users/12452/AppData/Local/Android/Sdk/build-tools/36.0.0/core-lambda-stub
   $SRCS
 
 echo "=== 4. d8 ==="
-CLASSES=$(find "$BUILD/classes" -name "*.class")
+# 类多了之后 cmd 命令行会超过 8191 字符上限，先打成一个 jar 再喂给 d8
+"C:/Program Files/Microsoft/jdk-17.0.19.10-hotspot/bin/jar.exe" cf "$BUILD/classes.jar" -C "$BUILD/classes" .
 "$BT/d8.bat" --min-api 24 --lib "$ANDROID_JAR" \
   --classpath "$BT/core-lambda-stubs.jar" \
   --output "$BUILD/dex" \
-  $CLASSES
+  "$BUILD/classes.jar"
 
 echo "=== 5. package dex into apk ==="
 "C:/Users/12452/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/python/python.exe" - "$BUILD/app.unsigned.apk" "$BUILD/dex/classes.dex" <<'PY'

@@ -42,6 +42,8 @@ public class SettingsPage {
     public static final int REQ_IMPORT = 9102;
     public static final int REQ_ZIP_EXPORT = 9103;
     public static final int REQ_ZIP_IMPORT = 9104;
+    /** 选背景照片 */
+    public static final int REQ_BG = 9105;
 
     private final MainActivity a;
 
@@ -79,6 +81,11 @@ public class SettingsPage {
         pref.addView(Ui.divider(a));
         pref.addView(settingRow("所在城市", st.city.isEmpty() ? "未设置" : st.city, "仅用于显示", new Runnable() {
             @Override public void run() { editCity(); }
+        }));
+        pref.addView(Ui.divider(a));
+        pref.addView(settingRow("背景图片", Glass.wallpaperActive(a) ? "自定义照片" : "默认渐变",
+                "毛玻璃卡片会透出这张图（建议浅色照片）", new Runnable() {
+            @Override public void run() { chooseWallpaper(); }
         }));
         page.addView(pref);
         page.addView(Ui.spacer(a, 12));
@@ -146,6 +153,39 @@ public class SettingsPage {
         page.addView(about);
 
         a.contentView(MainActivity.scroller(a, page));
+    }
+
+    /** 背景照片在 PhotoStore 里的固定 id（同一时间只有一张）。 */
+    private static final String WALL_ID = "glass_wall";
+
+    /** 选一张照片当毛玻璃底图 / 恢复默认渐变。 */
+    private void chooseWallpaper() {
+        boolean has = Glass.wallpaperActive(a);
+        String[] items = has
+                ? new String[]{"从相册选择", "恢复默认渐变"}
+                : new String[]{"从相册选择"};
+        new AlertDialog.Builder(a)
+                .setTitle("背景图片")
+                .setItems(items, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) {
+                        if (which == 0) {
+                            PhotoPicker.pick(a, REQ_BG, WALL_ID, new Runnable() {
+                                @Override public void run() { applyWallpaper(); }
+                            });
+                        } else {
+                            Glass.setWallpaper(a, null);
+                            a.applyBackdrop();
+                            a.refresh();
+                        }
+                    }
+                })
+                .show();
+    }
+
+    private void applyWallpaper() {
+        Glass.setWallpaper(a, WALL_ID);
+        a.applyBackdrop();
+        a.refresh();
     }
 
     private LinearLayout settingRow(String label, String value, String hint, final Runnable onTap) {

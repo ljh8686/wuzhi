@@ -7,9 +7,12 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.util.DisplayMetrics;
+
+import com.wuzhi.core.PhotoStore;
 
 /**
  * 毛玻璃（glassmorphism）底座。
@@ -22,17 +25,22 @@ import android.util.DisplayMetrics;
 public final class Glass {
 
     /** 玻璃面板默认白度 */
-    public static final int TINT = 0xA2FFFFFF;
-    public static final int TINT_STRONG = 0xC4FFFFFF;
-    public static final int TINT_WEAK = 0x5CFFFFFF;
+    public static final int TINT = 0x8AFFFFFF;
+    public static final int TINT_STRONG = 0xB0FFFFFF;
+    public static final int TINT_WEAK = 0x44FFFFFF;
     /** 边缘高光 */
-    public static final int STROKE = 0xA6FFFFFF;
-    public static final int STROKE_SOFT = 0x59FFFFFF;
+    public static final int STROKE = 0xC6FFFFFF;
+    public static final int STROKE_SOFT = 0x66FFFFFF;
+
+    /** 背景照片在 SharedPreferences 里的键 */
+    private static final String PREF = "wuzhi";
+    private static final String KEY_WALL = "glass_wall";
 
     private static Bitmap cached;
     private static int cachedW = -1;
     private static int cachedH = -1;
     private static Bitmap noiseCached;
+    private static String wallpaperId;
 
     private Glass() {}
 
@@ -47,13 +55,38 @@ public final class Glass {
         java.util.Random rnd = new java.util.Random(20261123L);
         for (int i = 0; i < pix.length; i++) {
             int v = rnd.nextBoolean() ? 0xFF : 0x00;
-            int a = 6 + rnd.nextInt(9);
+            int a = 4 + rnd.nextInt(7);
             pix[i] = (a << 24) | (v << 16) | (v << 8) | v;
         }
         Bitmap b = Bitmap.createBitmap(n, n, Bitmap.Config.ARGB_8888);
         b.setPixels(pix, 0, n, 0, 0, n, n);
         noiseCached = b;
         return b;
+    }
+
+    /** 是否用了自定义背景照片。 */
+    public static synchronized boolean wallpaperActive(Context c) {
+        if (wallpaperId == null || wallpaperId.length() == 0) restoreWallpaper(c);
+        return wallpaperId != null && wallpaperId.length() > 0;
+    }
+
+    /**
+     * 设置背景照片（id 是 PhotoStore 里的文件名）。传 null / 空串恢复默认渐变。
+     * 会立刻让缓存失效，下次绘制重新生成。
+     */
+    public static synchronized void setWallpaper(Context c, String id) {
+        wallpaperId = (id == null || id.length() == 0) ? null : id;
+        c.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit()
+                .putString(KEY_WALL, wallpaperId == null ? "" : wallpaperId).apply();
+        cached = null;
+        cachedW = -1;
+        cachedH = -1;
+    }
+
+    /** 启动时从偏好里恢复背景照片设置。 */
+    public static synchronized void restoreWallpaper(Context c) {
+        String id = c.getSharedPreferences(PREF, Context.MODE_PRIVATE).getString(KEY_WALL, "");
+        wallpaperId = (id == null || id.length() == 0) ? null : id;
     }
 
     /** 全屏柔化背景（缓存，只生成一次）。 */
@@ -67,23 +100,44 @@ public final class Glass {
         int sh = Math.max(8, h / 4);
         Bitmap small = Bitmap.createBitmap(sw, sh, Bitmap.Config.ARGB_8888);
         Canvas cv = new Canvas(small);
-
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p.setShader(new LinearGradient(0, 0, sw * 0.35f, sh,
-                new int[]{0xFFFFFCF6, 0xFFF9EFE2, 0xFFEFE0D0}, null, Shader.TileMode.CLAMP));
-        cv.drawRect(0, 0, sw, sh, p);
 
-        blob(cv, sw * 0.14f, sh * 0.08f, sw * 0.72f, 0x77E8825A);
-        blob(cv, sw * 0.92f, sh * 0.24f, sw * 0.66f, 0x66F2B25A);
-        blob(cv, sw * 0.06f, sh * 0.56f, sw * 0.62f, 0x556FA88A);
-        blob(cv, sw * 0.95f, sh * 0.72f, sw * 0.70f, 0x5C7FA3C0);
-        blob(cv, sw * 0.42f, sh * 0.40f, sw * 0.55f, 0x40FFFFFF);
-        blob(cv, sw * 0.30f, sh * 0.92f, sw * 0.60f, 0x4DD98AA0);
+        Bitmap photo = null;
+        if (wallpaperId != null && wallpaperId.length() > 0) {
+            try {
+                photo = PhotoStore.loadById(c, wallpaperId, Math.max(w, h));
+            } catch (Throwable ignored) {
+            }
+        }
+
+        if (photo != null) {
+            // 背景照片：居中裁切铺满 → 盖一层白纱（保证黑字可读）→ 重度模糊
+            p.setFilterBitmap(true);
+            float sc = Math.max(sw / (float) photo.getWidth(), sh / (float) photo.getHeight());
+            float dw = photo.getWidth() * sc, dh = photo.getHeight() * sc;
+            RectF dst = new RectF((sw - dw) / 2f, (sh - dh) / 2f, (sw + dw) / 2f, (sh + dh) / 2f);
+            cv.drawBitmap(photo, null, dst, p);
+            p.setFilterBitmap(false);
+            p.setColor(0x74FFFFFF);
+            cv.drawRect(0, 0, sw, sh, p);
+        } else {
+            p.setShader(new LinearGradient(0, 0, sw * 0.35f, sh,
+                    new int[]{0xFFFFFCF6, 0xFFF9EFE2, 0xFFEFE0D0}, null, Shader.TileMode.CLAMP));
+            cv.drawRect(0, 0, sw, sh, p);
+            p.setShader(null);
+
+            blob(cv, sw * 0.14f, sh * 0.08f, sw * 0.72f, 0x77E8825A);
+            blob(cv, sw * 0.92f, sh * 0.24f, sw * 0.66f, 0x66F2B25A);
+            blob(cv, sw * 0.06f, sh * 0.56f, sw * 0.62f, 0x556FA88A);
+            blob(cv, sw * 0.95f, sh * 0.72f, sw * 0.70f, 0x5C7FA3C0);
+            blob(cv, sw * 0.42f, sh * 0.40f, sw * 0.55f, 0x40FFFFFF);
+            blob(cv, sw * 0.30f, sh * 0.92f, sw * 0.60f, 0x4DD98AA0);
+        }
 
         int[] pix = new int[sw * sh];
         small.getPixels(pix, 0, sw, 0, 0, sw, sh);
-        boxBlur(pix, sw, sh, 5);
-        boxBlur(pix, sw, sh, 4);
+        boxBlur(pix, sw, sh, photo != null ? 9 : 5);
+        boxBlur(pix, sw, sh, photo != null ? 7 : 4);
         small.setPixels(pix, 0, sw, 0, 0, sw, sh);
 
         Bitmap full = Bitmap.createScaledBitmap(small, w, h, true);

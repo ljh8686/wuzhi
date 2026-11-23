@@ -49,7 +49,8 @@ public class MainActivity extends Activity {
             int vis = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
             if (Build.VERSION.SDK_INT >= 23) vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
             w.getDecorView().setSystemUiVisibility(vis);
-            // 毛玻璃底座：整窗铺一张柔化的网格渐变
+            // 毛玻璃底座：整窗铺一张柔化的网格渐变（或用户选的照片）
+            Glass.restoreWallpaper(this);
             w.setBackgroundDrawable(Glass.backdropDrawable(this));
         }
 
@@ -118,6 +119,13 @@ public class MainActivity extends Activity {
 
     public void save() {
         App.get(this).save();
+    }
+
+    /** 背景（渐变或自定义照片）变了之后重新铺一层。 */
+    public void applyBackdrop() {
+        if (Build.VERSION.SDK_INT >= 21) {
+            getWindow().setBackgroundDrawable(Glass.backdropDrawable(this));
+        }
     }
 
     public long today() {
