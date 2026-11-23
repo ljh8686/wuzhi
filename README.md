@@ -124,6 +124,23 @@ app/src/com/wuzhi/
     └── PhotoPicker.java      相册选图（SAF，无需存储权限）
 ```
 
+## 在电脑上看界面
+
+不用装 Android Studio，三种办法：
+
+1. **第三方模拟器（最省事）**：装 MuMu 12 / 雷电，装好后在命令行 `adb connect 127.0.0.1:16384`（MuMu）或 `127.0.0.1:5555`（雷电），再 `adb install -r wuzhi.apk`，窗口里就是真实渲染。
+2. **官方 emulator（本仓库验证用的就是它）**：
+   ```bash
+   emulator -avd <你的AVD> -no-window -no-audio -no-boot-anim -gpu host -accel on
+   adb install -r wuzhi.apk
+   adb shell am start -n com.wuzhi/.ui.MainActivity
+   adb exec-out screencap -p > shot.png
+   ```
+   `-gpu host` 是关键：`swiftshader_indirect` 会 0xC0000005 崩溃、`-gpu off` 会卡在开机。
+3. **真机 + scrcpy**：手机开 USB 调试，`scrcpy` 把画面投到电脑，可以直接用鼠标操作。
+
+`docs/screenshots/` 里的 6 张就是模拟器 1080×1920 的真实截图。
+
 ## 数据
 
 所有数据只存在手机本地：`getFilesDir()/wuzhi.json`，照片在 `getFilesDir()/photos/`。
