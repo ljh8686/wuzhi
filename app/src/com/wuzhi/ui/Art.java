@@ -27,6 +27,16 @@ public final class Art {
     private Art() {
     }
 
+    /** 名称关键词优先，其次按分类（键盘/耳机/桌子有专属插画）。 */
+    public static String itemKey(String name, String category) {
+        if (name != null) {
+            if (name.contains("键盘")) return "item_keyboard";
+            if (name.contains("耳机") || name.contains("耳麦")) return "item_headphone";
+            if (name.contains("桌")) return "item_desk";
+        }
+        return itemKey(category);
+    }
+
     /** 物品分类 → 插画 key（对应 res/drawable-nodpi/art_<key>.png）。 */
     public static String itemKey(String category) {
         if (category == null) return "item_other";

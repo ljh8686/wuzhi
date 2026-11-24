@@ -35,7 +35,7 @@ public class ClosetPage {
 
         LinearLayout head = Ui.hbox(a);
         LinearLayout left = Ui.vbox(a);
-        left.addView(Ui.title(a, "衣柜", 26, Ui.INK));
+        left.addView(Ui.title(a, "衣柜", 27, Ui.INK));
         TextView sub = Ui.text(a, "衣服也摊到每次穿，才知道值不值", 12.5f, Ui.MUTED);
         sub.setPadding(0, Ui.dp(a, 3), 0, 0);
         left.addView(sub);
@@ -85,8 +85,8 @@ public class ClosetPage {
     private View sectionTitle(String s, int count) {
         LinearLayout h = Ui.hbox(a);
         h.setPadding(Ui.dp(a, 2), Ui.dp(a, 4), Ui.dp(a, 2), 0);
-        h.addView(Ui.title(a, s, 13, Ui.INK2), Ui.lpw(1));
-        h.addView(Ui.text(a, count + " 件", 11.5f, Ui.MUTED));
+        h.addView(Ui.section(a, s), Ui.lpw(1));
+        h.addView(Ui.label(a, count + " 件", 11, Ui.MUTED));
         return h;
     }
 
@@ -140,7 +140,7 @@ public class ClosetPage {
     private View recentWearCard(long today) {
         LinearLayout card = Ui.card(a);
         LinearLayout h = Ui.hbox(a);
-        h.addView(Ui.title(a, "最近穿了什么", 14, Ui.INK), Ui.lpw(1));
+        h.addView(Ui.section(a, "最近穿了什么"), Ui.lpw(1));
         TextView all = Ui.text(a, "全部记录 ›", 12, Ui.ACCENT);
         all.setPadding(Ui.dp(a, 6), 0, 0, 0);
         all.setOnClickListener(new View.OnClickListener() {
@@ -158,7 +158,7 @@ public class ClosetPage {
             TextView d = Ui.text(a, DateUtil.formatShort(w.date), 12, Ui.MUTED);
             d.setWidth(Ui.dp(a, 52));
             r.addView(d);
-            TextView t = Ui.chip(a, w.temp + "°C", Ui.BLUE_SOFT, Ui.BLUE, 10.5f);
+            TextView t = Ui.chip(a, w.temp + "°C", 0xFFF1E9DC, 0xFF6B6153, 10.5f);
             t.setPadding(Ui.dp(a, 7), Ui.dp(a, 2), Ui.dp(a, 7), Ui.dp(a, 2));
             r.addView(t);
             TextView names = Ui.text(a, namesOf(w), 12, Ui.INK2);
@@ -195,7 +195,7 @@ public class ClosetPage {
         LinearLayout nmRow = Ui.hbox(a);
         nmRow.addView(Ui.title(a, c.name, 15, Ui.INK));
         if (c.favorite) {
-            TextView f = Ui.chip(a, "❤", 0xFFFBE3E8, 0xFFC2405E, 10);
+            TextView f = Ui.chip(a, "常穿", Ui.ACCENT_SOFT, Ui.ACCENT, 9);
             f.setPadding(Ui.dp(a, 5), Ui.dp(a, 1), Ui.dp(a, 5), Ui.dp(a, 1));
             LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -341,12 +341,13 @@ public class ClosetPage {
         long today = a.today();
 
         LinearLayout bar = Ui.hbox(a);
-        TextView back = Ui.text(a, "‹ 返回", 14, Ui.ACCENT);
+        TextView back = Ui.buttonSmall(a, "‹ 返回", 0xFFF0EAE0, Ui.INK2);
         back.setPadding(0, Ui.dp(a, 4), Ui.dp(a, 10), Ui.dp(a, 4));
         back.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { a.show(MainActivity.TAB_CLOSET); }
         });
-        bar.addView(back, Ui.lpw(1));
+        bar.addView(back);
+        bar.addView(new View(a), Ui.lpw(1));
         TextView edit = Ui.text(a, "编辑", 13.5f, Ui.ACCENT);
         edit.setPadding(Ui.dp(a, 10), Ui.dp(a, 4), Ui.dp(a, 10), Ui.dp(a, 4));
         edit.setOnClickListener(new View.OnClickListener() {
@@ -397,7 +398,7 @@ public class ClosetPage {
 
         // 信息
         LinearLayout info = Ui.card(a);
-        info.addView(Ui.title(a, "这件衣服", 14, Ui.INK));
+        info.addView(Ui.section(a, "这件衣服"));
         info.addView(Ui.spacer(a, 10));
         info.addView(kv("价格", Fmt.money(c.priceFen), Ui.INK));
         info.addView(kv("买了多久", DateUtil.duration(c.ownedDays(today)) + "（" + DateUtil.format(c.buyDate) + "）", Ui.INK2));
@@ -420,14 +421,14 @@ public class ClosetPage {
         mine.sort((x, y) -> Long.compare(y.date, x.date));
         if (!mine.isEmpty()) {
             LinearLayout logs = Ui.card(a);
-            logs.addView(Ui.title(a, "穿它的记录", 14, Ui.INK));
+            logs.addView(Ui.section(a, "穿它的记录"));
             logs.addView(Ui.spacer(a, 8));
             for (int i = 0; i < mine.size() && i < 12; i++) {
                 WearLog w = mine.get(i);
                 LinearLayout r = Ui.hbox(a);
                 r.setPadding(0, Ui.dp(a, 5), 0, Ui.dp(a, 5));
                 r.addView(Ui.text(a, DateUtil.formatShort(w.date), 12, Ui.MUTED), Ui.lpw(1));
-                TextView t = Ui.chip(a, w.temp + "°C", Ui.BLUE_SOFT, Ui.BLUE, 10.5f);
+                TextView t = Ui.chip(a, w.temp + "°C", 0xFFF1E9DC, 0xFF6B6153, 10.5f);
                 t.setPadding(Ui.dp(a, 7), Ui.dp(a, 2), Ui.dp(a, 7), Ui.dp(a, 2));
                 r.addView(t);
                 if (w.feel > 0) {
@@ -524,12 +525,13 @@ public class ClosetPage {
     void logList() {
         LinearLayout page = MainActivity.page(a);
         LinearLayout bar = Ui.hbox(a);
-        TextView back = Ui.text(a, "‹ 返回", 14, Ui.ACCENT);
+        TextView back = Ui.buttonSmall(a, "‹ 返回", 0xFFF0EAE0, Ui.INK2);
         back.setPadding(0, Ui.dp(a, 4), Ui.dp(a, 10), Ui.dp(a, 4));
         back.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { a.show(MainActivity.TAB_CLOSET); }
         });
-        bar.addView(back, Ui.lpw(1));
+        bar.addView(back);
+        bar.addView(new View(a), Ui.lpw(1));
         page.addView(bar);
         page.addView(Ui.spacer(a, 8));
         page.addView(Ui.title(a, "穿着记录", 22, Ui.INK));
@@ -551,7 +553,7 @@ public class ClosetPage {
             r.addView(left, Ui.lpw(1));
             LinearLayout right = Ui.vbox(a);
             right.setGravity(Gravity.END);
-            TextView t = Ui.chip(a, w.temp + "°C", Ui.BLUE_SOFT, Ui.BLUE, 11);
+            TextView t = Ui.chip(a, w.temp + "°C", 0xFFF1E9DC, 0xFF6B6153, 11);
             t.setPadding(Ui.dp(a, 8), Ui.dp(a, 3), Ui.dp(a, 8), Ui.dp(a, 3));
             right.addView(t);
             if (w.weather != null && !w.weather.isEmpty()) {

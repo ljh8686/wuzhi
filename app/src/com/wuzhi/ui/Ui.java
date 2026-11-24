@@ -24,7 +24,7 @@ public final class Ui {
     public static final int CARD = 0xFFFFFFFF;
     public static final int INK = 0xFF23201C;
     public static final int INK2 = 0xFF5B554C;
-    public static final int MUTED = 0xFF9A9287;
+    public static final int MUTED = 0xFF6F695F;
     public static final int LINE = 0xFFE7E0D5;
     public static final int ACCENT = 0xFFC2552E;
     public static final int ACCENT_SOFT = 0xFFF6E3DA;
@@ -86,25 +86,44 @@ public final class Ui {
         t.setTextSize(sp);
         t.setTextColor(color);
         t.setIncludeFontPadding(false);
+        t.setTypeface(Type.body(c));
         return t;
     }
 
+    /** 标题：默认从系统字族派生（跟随手机字体），可在设置里换宋体。 */
     public static TextView title(Context c, CharSequence s, float sp, int color) {
         TextView t = text(c, s, sp, color);
-        t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        t.setTypeface(sp >= 18 ? Type.title(c) : Type.bold(c));
+        if (sp >= 20) t.setLetterSpacing(-0.015f);
         return t;
     }
 
     public static TextView bold(Context c, CharSequence s, float sp, int color) {
         TextView t = text(c, s, sp, color);
-        t.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        t.setTypeface(Type.bold(c));
         return t;
     }
 
-    /** 大数字，等宽感更强 */
+    /** 大数字：等宽数字，跳动时不抖。 */
     public static TextView number(Context c, CharSequence s, float sp, int color) {
         TextView t = text(c, s, sp, color);
-        t.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+        t.setTypeface(sp >= 20 ? Type.display(c) : Type.body(c));
+        Type.tabular(t);
+        return t;
+    }
+
+    /** 小标签：字距略开，弱化颜色，用在卡片眉题和字段名上。 */
+    public static TextView label(Context c, CharSequence s, float sp, int color) {
+        TextView t = text(c, s, sp, color);
+        t.setLetterSpacing(0.08f);
+        return t;
+    }
+
+    /** 分区标题：比正文重一点、字距略开，不抢主标题。 */
+    public static TextView section(Context c, CharSequence s) {
+        TextView t = text(c, s, 13, INK2);
+        t.setTypeface(Type.bold(c));
+        t.setLetterSpacing(0.06f);
         return t;
     }
 
@@ -256,8 +275,8 @@ public final class Ui {
             case "数码": return 0xFF3B6E8F;
             case "家电": return 0xFF4C7A6B;
             case "家具": return 0xFF8A6A45;
-            case "服饰": return 0xFFA8577C;
-            case "鞋包": return 0xFF7B5EA7;
+            case "服饰": return 0xFFB05B4A;
+            case "鞋包": return 0xFF8A5A6B;
             case "美妆": return 0xFFC2552E;
             case "运动": return 0xFF2F7F5F;
             case "厨具": return 0xFFB07A2A;

@@ -49,6 +49,10 @@ public final class Recommender {
         public final List<Cloth> cloths = new ArrayList<>();
         public final double score;
         public final List<String> reasons = new ArrayList<>();
+        /** 这套里所有单品共同覆盖的温度区间；无效时等于 NO_TEMP */
+        public int fitMin = Cloth.NO_TEMP, fitMax = Cloth.NO_TEMP;
+        /** 当前温度下，最不合身那件差了多少度；0 表示每件都合身 */
+        public int minGap = 0;
 
         Suggestion(Outfit o, double s) { this.outfit = o; this.score = s; }
 
@@ -180,14 +184,23 @@ public final class Recommender {
                 cs.add(c);
             }
             if (!ok || cs.isEmpty()) continue;
-            double s = 70 - o.distanceTo(temp) * 8;
-            if (o.fits(temp)) s += 15;
+            int gap = 0, fmin = Integer.MIN_VALUE, fmax = Integer.MAX_VALUE, outCount = 0;
+            for (Cloth c : cs) {
+                gap = Math.max(gap, c.distanceTo(temp));
+                if (!c.fits(temp)) outCount++;
+                fmin = Math.max(fmin, c.tempMin);
+                fmax = Math.min(fmax, c.tempMax);
+            }
+            double s = 70 - gap * 8;
+            if (gap == 0) s += 15;
             if (o.favorite) s += 8;
             if (o.lastWornDate > 0 && today - o.lastWornDate <= 2) s -= 10;
             Suggestion sg = new Suggestion(o, s);
             sg.cloths.addAll(cs);
-            if (o.fits(temp)) sg.reasons.add("这套就是为 " + o.tempRangeText() + " 备的");
-            else sg.reasons.add("温度差 " + o.distanceTo(temp) + "°C");
+            sg.minGap = gap;
+            sg.fitMin = fmin; sg.fitMax = fmax;
+            if (gap == 0) sg.reasons.add("每件都适合 " + fmin + "~" + fmax + "°C");
+            else sg.reasons.add(cs.size() + " 件里有 " + outCount + " 件不在这个温度的舒适区");
             if (o.favorite) sg.reasons.add("收藏搭配");
             saved.add(sg);
         }
@@ -229,6 +242,9 @@ public final class Recommender {
         o.tempMax = temp;
         Suggestion s = new Suggestion(o, total);
         s.cloths.addAll(picked);
+        int gap = 0, fmin = Integer.MIN_VALUE, fmax = Integer.MAX_VALUE;
+        for (Cloth c : picked) { gap = Math.max(gap, c.distanceTo(temp)); fmin = Math.max(fmin, c.tempMin); fmax = Math.min(fmax, c.tempMax); }
+        s.minGap = gap; s.fitMin = fmin; s.fitMax = fmax;
         if (temp <= 8) s.reasons.add("天冷，注意保暖");
         else if (temp >= 30) s.reasons.add("天热，选透气款");
         else s.reasons.add(temp + "°C 适合这样穿");

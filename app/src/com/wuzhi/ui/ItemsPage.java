@@ -36,7 +36,7 @@ public class ItemsPage {
         // 顶部标题
         LinearLayout head = Ui.hbox(a);
         LinearLayout left = Ui.vbox(a);
-        left.addView(Ui.title(a, "账本", 26, Ui.INK));
+        left.addView(Ui.title(a, "账本", 27, Ui.INK));
         TextView sub = Ui.text(a, "每一件东西，摊到每天值不值", 12.5f, Ui.MUTED);
         sub.setPadding(0, Ui.dp(a, 3), 0, 0);
         left.addView(sub);
@@ -90,8 +90,8 @@ public class ItemsPage {
     private View sectionTitle(String s, int count) {
         LinearLayout h = Ui.hbox(a);
         h.setPadding(Ui.dp(a, 2), Ui.dp(a, 4), Ui.dp(a, 2), 0);
-        h.addView(Ui.title(a, s, 13, Ui.INK2), Ui.lpw(1));
-        h.addView(Ui.text(a, count + " 件", 11.5f, Ui.MUTED));
+        h.addView(Ui.section(a, s), Ui.lpw(1));
+        h.addView(Ui.label(a, count + " 件", 11, Ui.MUTED));
         return h;
     }
 
@@ -152,7 +152,7 @@ public class ItemsPage {
 
         LinearLayout top = Ui.hbox(a);
         String emoji = it.emoji == null || it.emoji.isEmpty() ? "📦" : it.emoji;
-        View ic = Art.avatar(a, it.id, Art.itemKey(it.category), emoji, 40, Ui.softFor(it.category));
+        View ic = Art.avatar(a, it.id, Art.itemKey(it.name, it.category), emoji, 40, Ui.softFor(it.category));
         top.addView(ic);
 
         LinearLayout mid = Ui.vbox(a);
@@ -289,12 +289,13 @@ public class ItemsPage {
 
         // 返回 + 标题
         LinearLayout bar = Ui.hbox(a);
-        TextView back = Ui.text(a, "‹ 返回", 14, Ui.ACCENT);
+        TextView back = Ui.buttonSmall(a, "‹ 返回", 0xFFF0EAE0, Ui.INK2);
         back.setPadding(0, Ui.dp(a, 4), Ui.dp(a, 10), Ui.dp(a, 4));
         back.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { a.show(MainActivity.TAB_ITEMS); }
         });
-        bar.addView(back, Ui.lpw(1));
+        bar.addView(back);
+        bar.addView(new View(a), Ui.lpw(1));
         TextView edit = Ui.text(a, "编辑", 13.5f, Ui.ACCENT);
         edit.setPadding(Ui.dp(a, 10), Ui.dp(a, 4), Ui.dp(a, 10), Ui.dp(a, 4));
         edit.setOnClickListener(new View.OnClickListener() {
@@ -308,7 +309,7 @@ public class ItemsPage {
         LinearLayout hero = Ui.card(a);
         hero.setBackground(Ui.gradient(0xFF2E2A26, 0xFF3B352E, 18, a));
 
-        View heroArt = Art.hero(a, it.id, Art.itemKey(it.category),
+        View heroArt = Art.hero(a, it.id, Art.itemKey(it.name, it.category),
                 it.emoji == null || it.emoji.isEmpty() ? "📦" : it.emoji, 64, 0x22FFFFFF);
         heroArt.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -347,7 +348,7 @@ public class ItemsPage {
 
         // 成本拆解
         LinearLayout c = Ui.card(a);
-        c.addView(Ui.title(a, "钱都花在哪", 14, Ui.INK));
+        c.addView(Ui.section(a, "钱都花在哪"));
         c.addView(Ui.spacer(a, 10));
         c.addView(kv("购入价", Fmt.money(it.priceFen), Ui.INK));
         if (it.salvageFen > 0) c.addView(kv("卖出回收", "-" + Fmt.money(it.salvageFen), Ui.GREEN));
@@ -406,7 +407,7 @@ public class ItemsPage {
 
     private View chartCard(Item it, long today) {
         LinearLayout c = Ui.card(a);
-        c.addView(Ui.title(a, "继续用下去，每天会更便宜", 14, Ui.INK));
+        c.addView(Ui.section(a, "继续用下去，每天会更便宜"));
         TextView hint = Ui.text(a, "横轴是时间，纵轴是那一天的日均成本", 11.5f, Ui.MUTED);
         hint.setPadding(0, Ui.dp(a, 4), 0, Ui.dp(a, 10));
         c.addView(hint);

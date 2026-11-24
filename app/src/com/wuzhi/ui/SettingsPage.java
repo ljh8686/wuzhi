@@ -73,13 +73,17 @@ public class SettingsPage {
 
         // ---------------- 偏好
         LinearLayout pref = Ui.card(a);
-        pref.addView(Ui.title(a, "偏好", 14, Ui.INK));
+        pref.addView(Ui.section(a, "偏好"));
         pref.addView(Ui.spacer(a, 6));
         pref.addView(settingRow("推荐温度容差", "±" + st.tempTolerance + "°C", "相同温度推荐时允许的浮动范围", new Runnable() {
             @Override public void run() { editTolerance(); }
         }));
         pref.addView(Ui.divider(a));
-        pref.addView(settingRow("所在城市", st.city.isEmpty() ? "未设置" : st.city, "仅用于显示", new Runnable() {
+        pref.addView(settingRow("字体", Type.modeName(a), "跟随系统 = 用手机自己的字体；宋体更像纸质账簿", new Runnable() {
+            @Override public void run() { editFont(); }
+        }));
+        pref.addView(Ui.divider(a));
+        pref.addView(settingRow("所在城市", st.city.isEmpty() ? "自动定位" : st.city, "用城市名查天气；留空按网络位置自动判断", new Runnable() {
             @Override public void run() { editCity(); }
         }));
         pref.addView(Ui.divider(a));
@@ -92,7 +96,7 @@ public class SettingsPage {
 
         // ---------------- 备份
         LinearLayout bak = Ui.card(a);
-        bak.addView(Ui.title(a, "备份与恢复", 14, Ui.INK));
+        bak.addView(Ui.section(a, "备份与恢复"));
         TextView hint = Ui.text(a, "数据只存在这台手机上。换手机或重装前，先导出一份。", 11, Ui.MUTED);
         hint.setPadding(0, Ui.dp(a, 5), 0, Ui.dp(a, 10));
         bak.addView(hint);
@@ -127,7 +131,7 @@ public class SettingsPage {
 
         // ---------------- 数据
         LinearLayout data = Ui.card(a);
-        data.addView(Ui.title(a, "数据", 14, Ui.INK));
+        data.addView(Ui.section(a, "数据"));
         data.addView(Ui.spacer(a, 6));
         data.addView(settingRow("重新载入示例数据", "", "会清空现有数据，换成演示内容", new Runnable() {
             @Override public void run() { confirmSeed(); }
@@ -141,7 +145,7 @@ public class SettingsPage {
 
         // ---------------- 关于
         LinearLayout about = Ui.card(a);
-        about.addView(Ui.title(a, "关于「物资」", 14, Ui.INK));
+        about.addView(Ui.section(a, "关于「物资」"));
         TextView ab = Ui.text(a, "记录每件东西的真实成本，和衣柜里每件衣服的价值。\n数据全部保存在本机，不联网、不上传。", 12, Ui.INK2);
         ab.setPadding(0, Ui.dp(a, 8), 0, 0);
         ab.setLineSpacing(Ui.dpf(a, 3), 1f);
@@ -231,8 +235,21 @@ public class SettingsPage {
         s.show();
     }
 
+    private void editFont() {
+        final Sheet s = new Sheet(a, "字体", "换字体后界面会重开一次");
+        final Sheet.ChipRow ch = s.chips("选择字体", new String[]{"跟随系统", "宋体标题", "全宋体"}, Type.modeName(a));
+        s.onOk(new Sheet.OnOk() {
+            @Override public void onOk(Sheet sheet) {
+                Type.setMode(a, ch.index());
+                sheet.dismiss();
+                a.recreate();
+            }
+        });
+        s.show();
+    }
+
     private void editCity() {
-        final Sheet s = new Sheet(a, "所在城市", "只用来显示，不影响计算");
+        final Sheet s = new Sheet(a, "所在城市", "天气会按这个城市查；留空就按网络位置自动判断");
         final EditText c = s.field("城市", a.store().city, "比如 济南", InputType.TYPE_CLASS_TEXT);
         s.onOk(new Sheet.OnOk() {
             @Override public void onOk(Sheet sheet) {

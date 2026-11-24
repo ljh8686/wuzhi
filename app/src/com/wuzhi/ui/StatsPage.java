@@ -32,7 +32,7 @@ public class StatsPage {
 
         LinearLayout head = Ui.hbox(a);
         LinearLayout left = Ui.vbox(a);
-        left.addView(Ui.title(a, "统计", 26, Ui.INK));
+        left.addView(Ui.title(a, "统计", 27, Ui.INK));
         TextView sub = Ui.text(a, "钱花得值不值，数据说了算", 12.5f, Ui.MUTED);
         sub.setPadding(0, Ui.dp(a, 3), 0, 0);
         left.addView(sub);
@@ -134,7 +134,7 @@ public class StatsPage {
 
     private View categoryChart(Map<String, Long> cat) {
         LinearLayout card = Ui.card(a);
-        card.addView(Ui.title(a, "钱都花在哪些类别", 14, Ui.INK));
+        card.addView(Ui.section(a, "钱都花在哪些类别"));
         card.addView(Ui.spacer(a, 12));
 
         List<String> labels = new ArrayList<>();
@@ -177,7 +177,7 @@ public class StatsPage {
 
     private View rankCard(String title, List<Item> top, final long today) {
         LinearLayout card = Ui.card(a);
-        card.addView(Ui.title(a, title, 14, Ui.INK));
+        card.addView(Ui.section(a, title));
         card.addView(Ui.spacer(a, 8));
         for (int i = 0; i < top.size(); i++) {
             final Item it = top.get(i);

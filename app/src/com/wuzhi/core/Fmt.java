@@ -41,8 +41,8 @@ public final class Fmt {
 
     /** Per-day style amount with up to 2 decimals: 12 -> "¥12.00" */
     public static String perDay(double fen) {
-        if (fen < 0) return "-¥" + trim(-fen / 100.0);
-        return "¥" + trim2(fen / 100.0);
+        if (fen < 0) return "-¥" + String.format(Locale.US, "%.2f", -fen / 100.0);
+        return "¥" + String.format(Locale.US, "%.2f", fen / 100.0);
     }
 
     /** Plain 2-decimal number of yuan, no symbol. */

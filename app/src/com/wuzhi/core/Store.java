@@ -27,6 +27,11 @@ public final class Store {
     /** 上次同步天气的温度，999 表示无 */
     public int lastWeatherTemp = Cloth.NO_TEMP;
     public long lastWeatherAt;
+    /** 上次同步到的天气详情，用来在离线时也能显示 */
+    public int weatherCode = -1;
+    public String weatherText = "";
+    public int weatherMin = Cloth.NO_TEMP;
+    public int weatherMax = Cloth.NO_TEMP;
 
     // ---------------------------------------------------------------- ids
 
@@ -209,6 +214,10 @@ public final class Store {
         m.put("city", city);
         m.put("lastWeatherTemp", lastWeatherTemp);
         m.put("lastWeatherAt", lastWeatherAt);
+        m.put("weatherCode", weatherCode);
+        m.put("weatherText", weatherText);
+        m.put("weatherMin", weatherMin);
+        m.put("weatherMax", weatherMax);
         List<Object> it = new ArrayList<>();
         for (Item i : items) it.add(i.toJson());
         m.put("items", it);
@@ -236,6 +245,10 @@ public final class Store {
         st.city = Json.str(m, "city", "");
         st.lastWeatherTemp = Json.integer(m, "lastWeatherTemp", Cloth.NO_TEMP);
         st.lastWeatherAt = Json.lng(m, "lastWeatherAt", 0);
+        st.weatherCode = Json.integer(m, "weatherCode", -1);
+        st.weatherText = Json.str(m, "weatherText", "");
+        st.weatherMin = Json.integer(m, "weatherMin", Cloth.NO_TEMP);
+        st.weatherMax = Json.integer(m, "weatherMax", Cloth.NO_TEMP);
         for (Object o : Json.arr(m.get("items"))) st.items.add(Item.fromJson(Json.obj(o)));
         for (Object o : Json.arr(m.get("cloths"))) st.cloths.add(Cloth.fromJson(Json.obj(o)));
         for (Object o : Json.arr(m.get("outfits"))) st.outfits.add(Outfit.fromJson(Json.obj(o)));

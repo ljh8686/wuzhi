@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.wuzhi.core.Cloth;
 import com.wuzhi.core.DateUtil;
@@ -15,6 +16,7 @@ import com.wuzhi.core.Outfit;
 import com.wuzhi.core.Recommender;
 import com.wuzhi.core.Store;
 import com.wuzhi.core.WearLog;
+import com.wuzhi.core.Weather;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +30,9 @@ public class SuggestPage {
     private final MainActivity a;
     private int temp = Integer.MIN_VALUE;
     private int tolerance = 2;
+    private boolean loadingWeather;
+    private String weatherErr;
+    private long lastTryAt;
 
     public SuggestPage(MainActivity a) { this.a = a; }
 
@@ -55,7 +60,7 @@ public class SuggestPage {
 
         LinearLayout head = Ui.hbox(a);
         LinearLayout left = Ui.vbox(a);
-        left.addView(Ui.title(a, "穿什么", 26, Ui.INK));
+        left.addView(Ui.title(a, "穿什么", 27, Ui.INK));
         TextView sub = Ui.text(a, "按温度翻衣柜，像老朋友一样记得你", 12.5f, Ui.MUTED);
         sub.setPadding(0, Ui.dp(a, 3), 0, 0);
         left.addView(sub);
@@ -63,7 +68,8 @@ public class SuggestPage {
         page.addView(head);
         page.addView(Ui.spacer(a, 14));
 
-        // 温度控制卡
+        // 温度控制卡（顶部带实时天气）
+        maybeRefreshWeather();
         page.addView(tempCard(t));
         page.addView(Ui.spacer(a, 12));
 
@@ -125,15 +131,25 @@ public class SuggestPage {
         LinearLayout card = Ui.card(a);
         card.setBackground(Ui.gradient(0xFF3A4A5E, 0xFF2E3B4C, 18, a));
 
+        Store st = a.store();
         LinearLayout top = Ui.hbox(a);
-        top.addView(Ui.text(a, "现在多少度", 11.5f, 0x99FFFFFF), Ui.lpw(1));
-        TextView reset = Ui.text(a, "用上次记录的温度", 11, 0xCCFFFFFF);
+        String weather = "";
+        if (st.weatherText != null && st.weatherText.length() > 0) {
+            weather = Weather.emojiOf(st.weatherCode) + " " + st.weatherText;
+            if (st.weatherMin != Cloth.NO_TEMP && st.weatherMax != Cloth.NO_TEMP)
+                weather += " · 今日 " + st.weatherMin + "~" + st.weatherMax + "°";
+            else
+                weather += " " + st.lastWeatherTemp + "°";
+        } else {
+            weather = weatherErr != null ? "天气没拿到，先手动调" : "现在多少度";
+        }
+        TextView wline = Ui.text(a, loadingWeather ? "正在获取天气…" : weather, 11.5f, 0xCCFFFFFF);
+        wline.setSingleLine(true);
+        top.addView(wline, Ui.lpw(1));
+        TextView reset = Ui.text(a, loadingWeather ? "" : (weatherErr != null ? "重试" : "刷新天气"), 11, 0x99FFFFFF);
         reset.setPadding(Ui.dp(a, 8), Ui.dp(a, 2), 0, Ui.dp(a, 2));
         reset.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                temp = Integer.MIN_VALUE;
-                a.show(MainActivity.TAB_SUGGEST);
-            }
+            @Override public void onClick(View v) { refreshWeather(true); }
         });
         top.addView(reset);
         card.addView(top);
@@ -192,6 +208,59 @@ public class SuggestPage {
         h.setPadding(0, Ui.dp(a, 10), 0, 0);
         card.addView(h);
         return card;
+    }
+
+    // ---------------------------------------------------------------- 天气
+
+    /** 超过 30 分钟就自动拉一次，用户不用管。 */
+    private void maybeRefreshWeather() {
+        long now = System.currentTimeMillis() / 1000L;
+        long at = a.store().lastWeatherAt;
+        if (at > 0 && now - at < 1800) return;
+        if (now - lastTryAt < 120) return;   // 失败后 2 分钟内不反复打网络
+        refreshWeather(false);
+    }
+
+    private void refreshWeather(final boolean manual) {
+        if (loadingWeather) return;
+        loadingWeather = true;
+        weatherErr = null;
+        lastTryAt = System.currentTimeMillis() / 1000L;
+        if (manual) a.show(MainActivity.TAB_SUGGEST);
+        final String city = a.store().city;
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    final Weather.Now n = Weather.load(city);
+                    a.runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            loadingWeather = false;
+                            Store st = a.store();
+                            st.lastWeatherTemp = n.temp;
+                            st.lastWeatherAt = n.at;
+                            st.weatherCode = n.code;
+                            st.weatherText = n.text();
+                            st.weatherMin = n.tmin;
+                            st.weatherMax = n.tmax;
+                            if (st.city == null || st.city.length() == 0) st.city = n.city;
+                            temp = n.temp;
+                            a.save();
+                            a.show(MainActivity.TAB_SUGGEST);
+                        }
+                    });
+                } catch (final Exception e) {
+                    android.util.Log.w("wuzhi", "weather failed: " + e, e);
+                    a.runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            loadingWeather = false;
+                            weatherErr = e.getMessage();
+                            if (manual) Toast.makeText(a, "天气没拿到：" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            a.show(MainActivity.TAB_SUGGEST);
+                        }
+                    });
+                }
+            }
+        }).start();
     }
 
     // ---------------------------------------------------------------- 同温度历史
@@ -261,13 +330,19 @@ public class SuggestPage {
         LinearLayout tt = Ui.vbox(a);
         TextView name = Ui.title(a, s.title(), 15.5f, Ui.INK);
         tt.addView(name);
-        if (s.outfit != null && s.outfit.tempMin != s.outfit.tempMax) {
-            TextView rng = Ui.text(a, "适用 " + s.outfit.tempRangeText(), 11, Ui.MUTED);
+        String rangeText = null;
+        if (s.fitMin != Cloth.NO_TEMP && s.fitMax != Cloth.NO_TEMP && s.fitMin <= s.fitMax)
+            rangeText = s.minGap == 0 ? "每件都适合 " + s.fitMin + "~" + s.fitMax + "°C"
+                                      : "共同温区 " + s.fitMin + "~" + s.fitMax + "°C";
+        else if (s.outfit != null && s.outfit.tempMin != s.outfit.tempMax)
+            rangeText = "适用 " + s.outfit.tempRangeText();
+        if (rangeText != null) {
+            TextView rng = Ui.text(a, rangeText, 11, Ui.MUTED);
             rng.setPadding(0, Ui.dp(a, 3), 0, 0);
             tt.addView(rng);
         }
         h.addView(tt, Ui.lpw(1));
-        if (best) h.addView(Ui.chip(a, "最合适", Ui.ACCENT_SOFT, Ui.ACCENT, 10.5f));
+        if (best) h.addView(Ui.chip(a, s.minGap == 0 ? "最合适" : "较合适", Ui.ACCENT_SOFT, Ui.ACCENT, 10.5f));
         card.addView(h);
 
         // 衣服条目
@@ -281,7 +356,16 @@ public class SuggestPage {
             TextView nm = Ui.text(a, c.name, 13, Ui.INK);
             nm.setPadding(Ui.dp(a, 8), 0, 0, 0);
             r.addView(nm, Ui.lpw(1));
+            if (!c.fits(t)) {
+                TextView warn = Ui.chip(a, t < c.tempMin ? "偏薄" : "偏厚", 0xFFF7EBD2, 0xFF9A6B12, 9.5f);
+                warn.setPadding(Ui.dp(a, 6), Ui.dp(a, 2), Ui.dp(a, 6), Ui.dp(a, 2));
+                LinearLayout.LayoutParams wlp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                wlp.leftMargin = Ui.dp(a, 6);
+                r.addView(warn, wlp);
+            }
             TextView tg = Ui.text(a, c.tempRangeText(), 10.5f, Ui.MUTED);
+            tg.setPadding(Ui.dp(a, 6), 0, 0, 0);
             r.addView(tg);
             card.addView(r);
         }
@@ -490,7 +574,7 @@ public class SuggestPage {
     private View sectionTitle(String s, String right) {
         LinearLayout h = Ui.hbox(a);
         h.setPadding(Ui.dp(a, 2), Ui.dp(a, 4), Ui.dp(a, 2), 0);
-        h.addView(Ui.title(a, s, 14, Ui.INK), Ui.lpw(1));
+        h.addView(Ui.section(a, s), Ui.lpw(1));
         h.addView(Ui.text(a, right, 11.5f, Ui.MUTED));
         return h;
     }

@@ -214,7 +214,7 @@ public class MainActivity extends Activity {
     public static LinearLayout page(Activity a) {
         LinearLayout l = Ui.vbox(a);
         l.setBackgroundColor(0x00000000);
-        l.setPadding(Ui.dp(a, 16), Ui.dp(a, 12), Ui.dp(a, 16), Ui.dp(a, 24));
+        l.setPadding(Ui.dp(a, 16), Ui.dp(a, 12), Ui.dp(a, 16), Ui.dp(a, 100));
         return l;
     }
 }
